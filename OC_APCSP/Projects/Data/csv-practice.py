@@ -10,7 +10,7 @@ data = pd.read_csv('xmas.csv')
 #turn date into a dataframe(df)
 df = pd.DataFrame(data)
 
-
+'''
 #Validation 
 print('_-'*40)
 print("Head of the dataframe:") #HotDF = First 5 lines
@@ -30,23 +30,23 @@ print(round(df.describe(),1))
 
 #see value counts of pie choices 
 print('_-'*40)
-print('Pie Value Counts:')
-print(df['PIE'].value_counts())
+print('Spirit Values:')
+print(df['Spirit'].value_counts())
 
 #see how pie relates to nap time
 print('_-'*40)
-print('Average Nap time by Pie choice:')
-print(df.groupby('PIE')['NAP'].mean())
-
+print('Average Spirit time by Music start choice:')
+print(df.groupby('Spirit')['MStart'].mean())
+'''
 
 # lets actaully start coding our visualizations now
 
-#PIE choice bar graph
-#df['PIE'].value_counts().plot(kind='bar', color=['blue','orange','green','red', ], edgecolor='black')
 
-"""
+#PIE choice bar graph
+df['Spirit'].value_counts().plot(kind='bar', color=['blue','orange','green','red', ], edgecolor='black')
+
 #scatter plot of NAP vs PIE
-df.plot.scatter(df['DISH1'], df['NAP'])
+#df.plot.scatter(df['Spirit'], df['MStart'])
 
 #extra 
 plt.title('Favorite Pie Choice')
@@ -56,4 +56,3 @@ plt.xticks(rotation=45)
 plt.tight_layout()
 #end of extra 
 plt.show()
-"""

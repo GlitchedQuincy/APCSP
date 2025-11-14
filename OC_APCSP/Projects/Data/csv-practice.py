@@ -2,57 +2,52 @@
 import pandas as pd
 import matplotlib.pyplot as plt 
 import numpy as np  
+import re
 
-
-#create our data frame using our csv
+# create our data frame using our csv
 data = pd.read_csv('xmas.csv')
 
-#turn date into a dataframe(df)
+# turn data into a dataframe(df)
 df = pd.DataFrame(data)
 
-'''
-#Validation 
-print('_-'*40)
-print("Head of the dataframe:") #HotDF = First 5 lines
-print(df.head())
+# Count how many times each food was chosen across the separated columns F1..F11.
+# Exclude the combined "Foods" column and any blank values ("").
+f_cols = [c for c in df.columns if re.match(r'^F\d+$', c)]  # only F1, F2, ... F11
 
-print('_-'*40)
-print('Tail of the dataframe:') #TotDF = Last 5 lines
-print(df.tail())
+# Stack values from the F columns into one Series, trimming whitespace
+stacked = df[f_cols].applymap(lambda x: x.strip() if isinstance(x, str) else x).stack()
 
-print('_-'*40)
-print('information about the dataframe:')#info = file types in DF
-print(df.info())
+# Drop real NaNs, convert to string, strip again and remove unwanted entries
+all_choices = stacked.dropna().astype(str).str.strip()
 
-print('_-'*40)
-print('Statistical Summary of the dataframe:') #StatDF = Statistical summary of DF
-print(round(df.describe(),1))
+# Remove empty strings, strings that are only quotes (e.g. '""'), and literal 'nan'/'none'
+valid_mask = (
+    (all_choices != '') &
+    (~all_choices.str.fullmatch(r'"*')) &
+    (~all_choices.str.lower().isin(['nan', 'none']))
+)
+all_choices = all_choices[valid_mask]
 
-#see value counts of pie choices 
-print('_-'*40)
-print('Spirit Values:')
-print(df['Spirit'].value_counts())
+counts = all_choices.value_counts()
 
-#see how pie relates to nap time
-print('_-'*40)
-print('Average Spirit time by Music start choice:')
-print(df.groupby('Spirit')['MStart'].mean())
-'''
+# Plot: include every option (no "Other" grouping) and set the requested title
+pie_series = counts.sort_values(ascending=False)
 
-# lets actaully start coding our visualizations now
+labels = pie_series.index.tolist()
+sizes = pie_series.values.tolist()
 
-
-#PIE choice bar graph
-df['Spirit'].value_counts().plot(kind='bar', color=['blue','orange','green','red', ], edgecolor='black')
-
-#scatter plot of NAP vs PIE
-#df.plot.scatter(df['Spirit'], df['MStart'])
-
-#extra 
-plt.title('Favorite Pie Choice')
-plt.xlabel('Pie Type')
-plt.ylabel('# of People')
-plt.xticks(rotation=45)
+plt.figure(figsize=(10,10))
+plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.tab20.colors)
+plt.title('favorite things to have during christmas')
+plt.axis('equal')
 plt.tight_layout()
-#end of extra 
 plt.show()
+
+# Optional: bar chart of the top 20 exact counts for more clarity
+plt.figure(figsize=(10,6))
+counts.head(20).sort_values().plot(kind='barh', color='C0')
+plt.title('Food choice counts (top 20) from F1-F11')
+plt.xlabel('Count')
+plt.tight_layout()
+plt.show()
+

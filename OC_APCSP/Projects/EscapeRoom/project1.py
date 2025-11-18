@@ -14,7 +14,7 @@ def BT(text):
 def tw(text):
   for char in text:
     print(char,end="", flush=True)
-    time.sleep(0.001)
+    time.sleep(.005)
 hints=1
 act=1
 life=3
@@ -142,6 +142,10 @@ while life > 0:
     guess = int(input("HOW MANY BOMBS ARE THERE: "))
     if guess == secret:
       tw("then lets blow up them banks tyler")
+      tw("")
+      tw("you escaped and manegde to realise the you are actually tyler durden")
+      tw("this was based on fight club btw I hope you had fun")
+      tw("but you know how it end so . . . ")
       break
     else: 
       tw("thats wrong try again")
@@ -151,8 +155,5 @@ while life > 0:
         tw("hint: you are too big")
       else:
         tw("hint: you are too small")
-  tw("you escaped and manegde to realise the you are actually tyler durden")
-  tw("this was based on fight club btw I hope you had fun")
-  tw("but you know how it end so . . . ")
   break
 tw('you died')

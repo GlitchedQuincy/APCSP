@@ -3,6 +3,7 @@ import pygame as pg
 # Set up display
 pg.init()
 screen = pg.display.set_mode((1000, 800)) #800x800 window
+bar = pg.display.set_mode ((200, 800)) #sidebar window 
 running = True 
 pg.display.set_caption("paint") 
 

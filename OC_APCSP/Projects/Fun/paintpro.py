@@ -1,147 +1,135 @@
 import pygame as pg
 
-# Set up display
 pg.init()
-WIDTH, HEIGHT = 1000, 800
-SIDEBAR_W = 200
 
-screen = pg.display.set_mode((WIDTH, HEIGHT))
+# Window dimensions
+WIDTH, HEIGHT = 1000, 800
+
+# Sidebar width (left panel where controls live)
+SIDEBAR_WIDTH = 200
+
+screen = pg.display.set_mode((WIDTH, HEIGHT)) 
 pg.display.set_caption("paint")
 
-bg_color = (250, 250, 250)
-canvas_rect = pg.Rect(SIDEBAR_W, 0, WIDTH - SIDEBAR_W, HEIGHT)
+# Background color for canvas area
+BG_COLOR = (250, 250, 250)
 
-size = 30
-min_size, max_size = 5, 100
-color = (0, 0, 0)
+# Rect that defines the drawing canvas (right side)
+canvas_rect = pg.Rect(SIDEBAR_WIDTH, 0, WIDTH - SIDEBAR_WIDTH, HEIGHT)
 
-# color swatches (placed in sidebar)
-swatches = [
-    ( (20, 20, 40, 40), (0, 0, 0) ),       # black
-    ( (20, 70, 40, 40), (255, 0, 0) ),     # red
-    ( (20, 120, 40, 40), (0, 255, 0) ),    # green
-    ( (20, 170, 40, 40), (0, 0, 255) ),    # blue
-    ( (20, 220, 40, 40), (255, 255, 255) ),# white
-    ( (20, 270, 40, 40), (255, 255, 0) ),  # yellow
-    ( (20, 320, 40, 40), (128, 0, 128) ),  # purple
-]
+# Brush state
+brush_size = 30
+MIN_BRUSH, MAX_BRUSH = 5, 100
+current_color = (0, 0, 0)
 
-# size slider
-slider_rect = pg.Rect(20, 380, SIDEBAR_W - 40, 24)
-slider_handle_w = 12
-dragging_size = False
+# Color swatches shown in sidebar: (rect_tuple, color)
+color_swatches = [((20, 20 + i * 50, 40, 40), c) for i, c in enumerate([
+    (0,0,0), (255,0,0), (0,255,0), (0,0,255), (255,255,255), (255,255,0), (128,0,128)
+])]
 
-# initial draw
-screen.fill(bg_color)
-pg.draw.rect(screen, (230, 230, 230), (0, 0, SIDEBAR_W, HEIGHT))  # sidebar background
+# Simple '+' and '-' buttons for changing brush size
+dec_button = pg.Rect(20, 380, 80, 30)
+inc_button = pg.Rect(110, 380, 80, 30)
+
+font = pg.font.SysFont(None, 22)
+
+# Fill once so drawings persist without redrawing entire screen each frame
+screen.fill(BG_COLOR)
+# Draw sidebar background
+pg.draw.rect(screen, (230, 230, 230), (0, 0, SIDEBAR_WIDTH, HEIGHT))
 pg.display.update()
 
-running = True
-clock = pg.time.Clock()
-
 def draw_sidebar():
-    # sidebar background
-    pg.draw.rect(screen, (230, 230, 230), (0, 0, SIDEBAR_W, HEIGHT))
-    # title
-    font = pg.font.SysFont(None, 22)
+    """Draw the left-hand sidebar (colors, size buttons, preview)."""
+    pg.draw.rect(screen, (230, 230, 230), (0, 0, SIDEBAR_WIDTH, HEIGHT))
+
+    # Title
     screen.blit(font.render("Colors", True, (40,40,40)), (20, 0))
-    # swatches
-    for rect_t, col in swatches:
+
+    # Color swatches
+    for rect_t, col in color_swatches:
         r = pg.Rect(rect_t)
         pg.draw.rect(screen, col, r)
         pg.draw.rect(screen, (100,100,100), r, 2)
-        if col == color:
+        # highlight selected color
+        if col == current_color:
             pg.draw.rect(screen, (255,255,255), r.inflate(6,6), 3)
-    # size slider label
-    screen.blit(font.render("Brush size", True, (40,40,40)), (20, 360))
-    # slider track
-    pg.draw.rect(screen, (200,200,200), slider_rect)
-    # handle position mapped from size
-    t = (size - min_size) / (max_size - min_size)
-    handle_x = slider_rect.x + int(t * (slider_rect.w - slider_handle_w))
-    handle_rect = pg.Rect(handle_x, slider_rect.y - 4, slider_handle_w, slider_rect.h + 8)
-    pg.draw.rect(screen, (120,120,120), handle_rect)
-    # preview
-    screen.blit(font.render("Preview", True, (40,40,40)), (20, 430))
-    preview_center = (SIDEBAR_W // 2, 500)
-    pg.draw.circle(screen, color, preview_center, size)
-    pg.draw.circle(screen, (100,100,100), preview_center, size, 1)
 
-# draw initial sidebar
+    # Brush size controls
+    screen.blit(font.render("Brush size", True, (40,40,40)), (20, 360))
+
+    pg.draw.rect(screen, (200,200,200), dec_button)
+    pg.draw.rect(screen, (100,100,100), dec_button, 2)
+    screen.blit(font.render("-", True, (40,40,40)), (dec_button.x + 34, dec_button.y + 4))
+
+    pg.draw.rect(screen, (200,200,200), inc_button)
+    pg.draw.rect(screen, (100,100,100), inc_button, 2)
+    screen.blit(font.render("+", True, (40,40,40)), (inc_button.x + 34, inc_button.y + 4))
+
+    # Show current brush size
+    size_label = font.render(f"{brush_size}px", True, (40,40,40))
+    screen.blit(size_label, (SIDEBAR_WIDTH // 2 - size_label.get_width() // 2, 420))
+
+    # Preview of current brush
+    screen.blit(font.render("Preview", True, (40,40,40)), (20, 450))
+    preview_center = (SIDEBAR_WIDTH // 2, 540)
+    pg.draw.circle(screen, current_color, preview_center, brush_size)
+    pg.draw.circle(screen, (100,100,100), preview_center, brush_size, 1)
+
+# initial sidebar draw
 draw_sidebar()
 pg.display.update()
 
+clock = pg.time.Clock()
+running = True
+
 while running:
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
+    for e in pg.event.get():
+        if e.type == pg.QUIT:
             running = False
 
-        elif event.type == pg.MOUSEBUTTONDOWN:
-            mx, my = event.pos
-            if event.button == 1:
-                # clicked inside sidebar?
-                if mx < SIDEBAR_W:
-                    # check swatches
-                    for rect_t, col in swatches:
-                        if pg.Rect(rect_t).collidepoint((mx, my)):
-                            color = col
-                            draw_sidebar()
-                            pg.display.update()
-                            break
-                    # check slider
-                    if slider_rect.collidepoint((mx, my)):
-                        dragging_size = True
-                else:
-                    # draw on canvas
-                    if canvas_rect.collidepoint((mx, my)):
-                        pg.draw.circle(screen, color, (mx, my), size)
+        elif e.type == pg.MOUSEBUTTONDOWN and e.button == 1:
+            mx, my = e.pos
+            # Click inside sidebar?
+            if mx < SIDEBAR_WIDTH:
+                # pick a swatch if clicked
+                for rect_t, col in color_swatches:
+                    if pg.Rect(rect_t).collidepoint((mx, my)):
+                        current_color = col
+                        draw_sidebar()
                         pg.display.update()
-        elif event.type == pg.MOUSEBUTTONUP:
-            if event.button == 1:
-                dragging_size = False
-
-        elif event.type == pg.MOUSEMOTION:
-            mx, my = event.pos
-            if event.buttons[0]:
-                if dragging_size:
-                    # map mouse x within slider to size
-                    rel_x = max(0, min(mx - slider_rect.x, slider_rect.w))
-                    t = rel_x / slider_rect.w
-                    size = int(min_size + t * (max_size - min_size))
-                    draw_sidebar()
+                        break
+                # size buttons
+                if dec_button.collidepoint((mx, my)):
+                    brush_size = max(MIN_BRUSH, brush_size - 5)
+                    draw_sidebar(); pg.display.update()
+                elif inc_button.collidepoint((mx, my)):
+                    brush_size = min(MAX_BRUSH, brush_size + 5)
+                    draw_sidebar(); pg.display.update()
+            else:
+                # Draw on canvas only
+                if canvas_rect.collidepoint((mx, my)):
+                    pg.draw.circle(screen, current_color, (mx, my), brush_size)
                     pg.display.update()
-                else:
-                    # drawing while dragging on canvas only
-                    if mx >= SIDEBAR_W:
-                        pg.draw.circle(screen, color, (mx, my), size)
-                        pg.display.update()
 
-        elif event.type == pg.KEYDOWN:
-            if event.key == pg.K_c:
-                # clear canvas only
-                pg.draw.rect(screen, bg_color, canvas_rect)
-                draw_sidebar()
+        elif e.type == pg.MOUSEMOTION and e.buttons[0]:
+            mx, my = e.pos
+            # Draw while dragging, but only if pointer is in canvas area (not sidebar)
+            if mx >= SIDEBAR_WIDTH:
+                pg.draw.circle(screen, current_color, (mx, my), brush_size)
                 pg.display.update()
-            elif event.key == pg.K_UP:
-                size = min(max_size, size + 5)
-                draw_sidebar()
-                pg.display.update()
-            elif event.key == pg.K_DOWN:
-                size = max(min_size, size - 5)
-                draw_sidebar()
-                pg.display.update()
-            # optional quick color keys
-            elif event.key == pg.K_r:
-                color = (255,0,0); draw_sidebar(); pg.display.update()
-            elif event.key == pg.K_g:
-                color = (0,255,0); draw_sidebar(); pg.display.update()
-            elif event.key == pg.K_b:
-                color = (0,0,255); draw_sidebar(); pg.display.update()
-            elif event.key == pg.K_d:
-                color = (0,0,0); draw_sidebar(); pg.display.update()
-            elif event.key == pg.K_w:
-                color = bg_color; draw_sidebar(); pg.display.update()
 
-    clock.tick(120)
+        elif e.type == pg.KEYDOWN:
+            if e.key == pg.K_c:
+                # clear canvas
+                pg.draw.rect(screen, BG_COLOR, canvas_rect)
+                draw_sidebar(); pg.display.update()
+            elif e.key == pg.K_UP:
+                brush_size = min(MAX_BRUSH, brush_size + 5); draw_sidebar(); pg.display.update()
+            elif e.key == pg.K_DOWN:
+                brush_size = max(MIN_BRUSH, brush_size - 5); draw_sidebar(); pg.display.update()
+
+    # limit loop to reasonable frame rate
+    clock.tick(15)
 
 pg.quit()

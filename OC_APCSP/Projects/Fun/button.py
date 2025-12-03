@@ -1,6 +1,8 @@
 import pygame
 import random 
 
+
+
 pygame.init()
 
 SCREEN_SIZE = (1000, 1000)
